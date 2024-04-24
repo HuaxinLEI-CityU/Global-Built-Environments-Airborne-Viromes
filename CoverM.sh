@@ -1,3 +1,5 @@
+# Running on a PBS system cluster
+
 #!/bin/bash
 #PBS -l nodes=5:ppn=8
 #PBS -o /disk/rdisk10/huaxinlei2/air_sample2/un_subsample_coverage/coverm_o
