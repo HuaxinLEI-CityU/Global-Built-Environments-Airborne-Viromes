@@ -1,0 +1,57 @@
+# Fig.1_distance decay
+
+library(geosphere)
+library(vegan)
+library(ggplot2)
+library(RColorBrewer)
+
+geo <- read.csv("all_sample_geo.csv",header = T, row.names = 1, sep = ",")
+otu <- read.csv("all_sample_rpkm.csv", row.names = 1)
+#otu <- t(otu)
+
+d.geo <- distm(geo, fun = distHaversine)
+dist.geo <- as.dist(d.geo)
+
+dist_geo <- as.data.frame(as.vector(d.geo))
+dist_geo <- dist_geo/1000
+colnames(dist_geo) <- "dist_geo"
+
+dist.otu <- vegdist(otu, method = "bray")
+dist_otu <- as.data.frame(as.vector(dist.otu))
+colnames(dist_otu) <- "dist_otu"
+
+data <- data.frame(p1, p2)
+colnames(data) <-c("distance","similarity")
+                   
+data$dist_otu <- 1-data$dist_otu
+data$dist_otu <- data$dist_otu * 100 #ת??Ϊ?ٷֱ?
+summary(lm(data$dist_otu ~ data$dist_geo))
+
+
+library(viridis)
+library(ggbeeswarm)
+library(ggpubr)
+
+
+library(ggpubr)
+library(ggpmisc)
+library(RColorBrewer) #??ɫ
+library(scales)
+library(ggrastr)
+colormap <- colorRampPalette(rev(brewer.pal(11,'Spectral')))(32) #??ɫѡ??
+p<-ggplot(data, aes( x = distance, y =similarity)) + 
+  geom_point_rast() +
+  #scale_fill_gradient2(low = "#F39B7FFF", mid = "#4DBBD5FF",high = "#00A087FF")+
+  #scale_fill_viridis(option = "B")+
+  #scale_fill_gradientn(colours=colormap)+
+  #scale_color_paletteer_d("basetheme::minimal")+
+  geom_smooth(method = 'lm', formula = y ~ x, se = T)+
+  stat_cor(data=data, method = "pearson")+
+  theme_bw()
+formula <- y ~ x
+p + 
+  stat_smooth( aes(color = dist_geo, fill = dist_geo), method = "lm") +
+  stat_cor(aes(color = dist_geo), label.y = 4.4)+
+  stat_poly_eq(
+    aes(color = dist_geo, label = ..eq.label..),
+    formula = formula, label.y = 4.2, parse = TRUE)
