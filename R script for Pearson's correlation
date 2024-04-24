@@ -1,0 +1,15 @@
+# Pearson's correlations
+
+library(ggbeeswarm)
+library(ggpubr)
+library(RColorBrewer)
+
+df <- read.csv("top6_families_host_VHR.csv")
+
+ggplot(df, aes( x = host, y = VHR, color = city))+ 
+  geom_point(aes( color = city),size=1.5) + 
+  geom_smooth(method = 'lm', formula = y ~ x, se = F)+
+  stat_cor(data=df, method = "pearson")+
+  theme_bw() + 
+  facet_wrap(.~family,scales = "free", nrow=3)+
+  scale_color_manual(values = colorRampPalette(brewer.pal(6, "Dark2"))(6))
