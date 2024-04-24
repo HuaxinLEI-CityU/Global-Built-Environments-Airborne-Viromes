@@ -96,5 +96,65 @@ p <- ggplot(data=df, aes(x=city,y=Shannon))+geom_boxplot(alpha=0.8)+
   theme_bw()
 p
 
+# beta diversity
+
+library(vegan)
+library(ggplot2)
+library(plyr)
+library(RColorBrewer)
+
+# input data
+otu <- read.delim('all_sample_rpkm.tsv', row.names = 1, sep = ',', stringsAsFactors = FALSE, check.names = FALSE)
+otu <- t(otu)
+# metadata
+group <- read.delim('groups.txt', sep = '\t', stringsAsFactors = F)
+
+#calculation
+distance <- vegdist(otu, method = "bray")
+pcoa <- cmdscale(distance, k = (nrow(otu) - 1), eig = T)
+
+#adonis2
+dune.div <- adonis2(otu ~ Year, data = group, permutations = 999, method="bray")
+dune.div
+#dispersion
+dispersion <- betadisper(distance, group=group$city)
+permutest(dispersion,)
+dispersion <- betadisper(distance, group=group$city_year)
+disper_year <- permutest(dispersion,pairwise = TRUE, permutations = 999)
+
+#pairwise.adonis
+#library(pairwiseAdonis)
+dune.pairwise.adonis <- pairwise.adonis(x=otu, factors=group$contient_year, sim.function = "vegdist",
+                                        sim.method = "bray",
+                                        p.adjust.m = "BH",
+                                        reduce = NULL,
+                                        perm = 999)
+dune.pairwise.adonis
+
+# plot
+
+pcoa_eig <- (pcoa$eig)[1:2] / sum(pcoa$eig)
+sample_site <- data.frame({pcoa$point})[1:2]
+sample_site$names <- rownames(sample_site)
+names(sample_site)[1:2] <- c('PCoA1', 'PCoA2')
+names(group)[1:2] <- c('names', 'city')
+sample_site <- merge(sample_site, group, by = 'names', all.x = T)
+sample_site$site <- factor(sample_site$group, levels = c('Hong Kong', 'Denver', 'New York', 'London', 'Oslo', 'Stockholm'))
+
+pcoa_plot <- ggplot(sample_site, aes(PCoA1, PCoA2,color=city)) +
+  theme_classic()+
+  geom_vline(xintercept = 0, color = 'gray', size = 0.2) + 
+  geom_hline(yintercept = 0, color = 'gray', size = 0.2) + 
+  stat_ellipse(level=0.9)+
+  geom_point(aes(color = city, shape = Year),size = 3)+ 
+  scale_color_manual(values = brewer.pal(6,"Set1")) + 
+  scale_shape_manual(values = c(17, 16))+
+  theme(panel.grid = element_line(color = 'gray', linetype = 2, size = 0.1), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'), 
+        legend.title=element_blank()
+  )+
+  labs(x = paste('PCoA1: ', round(100 * pcoa_eig[1], 2), '%'), y = paste('PCoA2: ', round(100 * pcoa_eig[2], 2), '%')) 
+
+pcoa_plot
 
 
